@@ -1,0 +1,8 @@
+#!/usr/bin/env php
+<?php
+set_time_limit(0);
+@include_once __DIR__ . '/vendor/autoload.php';
+use Abj\Console\Application;
+define("PROJECT_PATH", __DIR__);
+$app = new Application('CLI Application', '1.0');
+$app->run();

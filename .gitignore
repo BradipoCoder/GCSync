@@ -1,0 +1,15 @@
+# Exclude these folders
+/.idea
+/vendor
+/screenshots
+/selenium
+/tmp
+
+# Now that this epository is private we can store config data
+#config/db/*.yml
+#config/user/*.yml
+
+# Exclude these files
+.directory
+/composer.lock
+/phantomjsdriver.log

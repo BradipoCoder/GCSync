@@ -1,0 +1,8 @@
+config:
+  parameters:
+    driver:   'pdo_mysql'
+    host:     'localhost'
+    dbname:   'pippo'
+    user:     'jack'
+    password: '02203505'
+    charset:  'utf8mb4'

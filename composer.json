@@ -1,0 +1,33 @@
+{
+  "name": "jack/tpsync",
+  "description": "TP Sync",
+  "type": "project",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Adam Jakab",
+      "email": "jakabadambalazs@gmail.com"
+    }
+  ],
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "require": {
+    "danielstjules/stringy": "^2.4",
+    "monolog/monolog": "^1.23",
+    "symfony/console": "^3.4",
+    "symfony/filesystem": "^3.4",
+    "symfony/process": "^3.4",
+    "symfony/yaml": "^3.4"
+  },
+  "scripts": {
+    "post-install-cmd": [
+    ],
+    "post-update-cmd": [
+    ]
+  },
+  "autoload": {
+    "psr-0": {
+      "Abj\\": "src/"
+    }
+  }
+}
