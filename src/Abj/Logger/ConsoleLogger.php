@@ -11,53 +11,72 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class ConsoleLogger
 {
-    /** @var  OutputInterface */
-    private static $logger;
+  /** @var  OutputInterface */
+  private static $logger;
 
-    /** @var bool */
-    private static $logToConsole = false;
+  /** @var bool */
+  private static $logToConsole = FALSE;
 
-    /**
-     * @param string $msg
-     */
-    public static function log($msg)
+  /**
+   * @param mixed $msg
+   */
+  public static function log($msg)
+  {
+    if (self::$logToConsole)
     {
-        if (self::$logToConsole)
-        {
-            self::$logger->writeln($msg);
-        }
+      if (is_string($msg))
+      {
+        self::$logger->writeln($msg);
+      }
+      else
+      {
+        self::dump($msg);
+      }
     }
+  }
 
-    /**
-     * @param int    $length
-     * @param string $repeat
-     */
-    public static function hr($length = 80, $repeat = '-')
+  /**
+   * @param mixed $var
+   */
+  public static function dump($var)
+  {
+    if (self::$logToConsole)
     {
-        self::log(str_repeat($repeat, $length));
-    }
 
-    /**
-     * @return boolean
-     */
-    public static function isLogToConsole(): bool
-    {
-        return self::$logToConsole;
+      self::$logger->writeln(print_r($var, TRUE));
     }
+  }
 
-    /**
-     * @param boolean $logToConsole
-     */
-    public static function setLogToConsole(bool $logToConsole)
-    {
-        self::$logToConsole = $logToConsole;
-    }
+  /**
+   * @param int    $length
+   * @param string $repeat
+   */
+  public static function hr($length = 80, $repeat = '-')
+  {
+    self::log(str_repeat($repeat, $length));
+  }
 
-    /**
-     * @param OutputInterface $logger
-     */
-    public static function setLogger(OutputInterface $logger)
-    {
-        self::$logger = $logger;
-    }
+  /**
+   * @return boolean
+   */
+  public static function isLogToConsole(): bool
+  {
+    return self::$logToConsole;
+  }
+
+  /**
+   * @param boolean $logToConsole
+   */
+  public static function setLogToConsole(bool $logToConsole)
+  {
+    self::$logToConsole = $logToConsole;
+  }
+
+  /**
+   * @param OutputInterface $logger
+   */
+  public static function setLogger(OutputInterface $logger)
+  {
+    self::$logger = $logger;
+  }
 }

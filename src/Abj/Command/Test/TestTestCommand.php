@@ -16,7 +16,7 @@ use Abj\Logger\ConsoleLogger;
 /**
  * Class TestTestCommand
  *
- * @package Abj\Command\User
+ * @package Abj\Command\Test
  */
 class TestTestCommand extends Command implements CommandInterface
 {

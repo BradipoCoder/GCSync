@@ -1,3 +1,10 @@
 config:
   application:
     username:           'jack'
+  platform:
+    trainingpeaks:
+      client_id: "####"
+      client_secret: "####"
+      client_scope: "cats:cuddle dogs:throw-frisbee"
+      api_base_url: "https://api.trainingpeaks.com"
+      oauth_base_url: "https://oauth.trainingpeaks.com"
