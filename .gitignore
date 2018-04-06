@@ -7,7 +7,7 @@
 
 # Now that this epository is private we can store config data
 #config/db/*.yml
-#config/user/*.yml
+config/user/*.yml
 
 # Exclude these files
 .directory
