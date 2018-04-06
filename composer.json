@@ -18,7 +18,8 @@
     "symfony/filesystem": "^3.4",
     "symfony/process": "^3.4",
     "symfony/yaml": "^3.4",
-    "doctrine/orm": "^2.5"
+    "doctrine/orm": "^2.5",
+    "dawguk/php-garmin-connect": "^1.0"
   },
   "scripts": {
     "post-install-cmd": [

@@ -29,6 +29,8 @@ class TestUserCommand extends UserAwareCommand implements CommandInterface
     ConsoleLogger::log("USER TEST COMMAND OK");
     ConsoleLogger::log($this->userConfiguration);
 
+
+
     //https://github.com/cpfair/tapiriik/blob/master/tapiriik/services/TrainingPeaks/trainingpeaks.py
   }
 }
