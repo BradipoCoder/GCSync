@@ -10,7 +10,7 @@ namespace Abj\Command\Test;
 use Abj\Console\CommandInterface;
 use Abj\Console\UserAwareCommand;
 use Abj\Logger\ConsoleLogger;
-use dawguk\GarminConnect;
+use Abj\Platform\Garmin\GarminConnect;
 
 /**
  * Class TestUserCommand
@@ -39,18 +39,18 @@ class TestUserCommand extends UserAwareCommand implements CommandInterface
    */
   protected function test1()
   {
-    $credentials = [
-      'username' => $this->userConfiguration->get('platform.garminconnect.username'),
-      'password' => $this->userConfiguration->get('platform.garminconnect.password'),
-    ];
+    $username = $this->userConfiguration->get('platform.garminconnect.username');
+    $password = $this->userConfiguration->get('platform.garminconnect.password');
 
     try {
-      $GC = new GarminConnect($credentials);
-      //$activities = $GC->getActivityList();
+      $GC = new GarminConnect($username, $password);
     } catch (\Exception $e) {
       ConsoleLogger::log("Oops: " . $e->getMessage());
     }
 
+
+
+    //$activities = $GC->getActivityList();
     if(isset($activities)) {
       print_r($activities);
     }
