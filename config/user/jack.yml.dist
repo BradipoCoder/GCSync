@@ -1,10 +1,11 @@
 config:
   application:
-    username:           'jack'
+    username:           "tony"
+    use_database:       false
   platform:
     garminconnect:
-      username: "jack"
-      password: "xyz"
+      username: "tony@gmail.com"
+      password: "xyx"
       api_base_url: "http://connect.garmin.com/proxy"
     trainingpeaks:
       client_id: "missing"
