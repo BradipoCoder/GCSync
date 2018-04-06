@@ -1,6 +1,6 @@
 {
-  "name": "jack/tpsync",
-  "description": "TP Sync",
+  "name": "jack/gcsync",
+  "description": "Garmin Connect Sync",
   "type": "project",
   "license": "MIT",
   "authors": [
