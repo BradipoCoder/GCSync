@@ -126,14 +126,18 @@ class GarminConnect extends Platform implements PlatformInterface
       "displayNameRequired" => "false"
     ];
 
-    $response = $this->transport->post($authUri . "/login", $urlParams, $postData, FALSE);
+    $resCode = $this->transport->post($authUri . "/login", $urlParams, $postData, FALSE);
 
-    if ($this->transport->getLastResponseCode() != 302)
+    if ($resCode != 302)
     {
       throw new \Exception("SSO network error - expected 302");
     }
 
-    if (!preg_match('#Set-Cookie: GARMIN-SSO=1; Domain=garmin.com; Path=/#i', $response))
+    $info = $this->transport->getCurlInfo();
+    ConsoleLogger::log($info);
+
+
+    if (!preg_match('#Set-Cookie: GARMIN-SSO=1; Domain=garmin.com; Path=/#i', $this->transport->getCurlInfo("response")))
     {
       throw new \Exception("SSO sign in failed.");
     }

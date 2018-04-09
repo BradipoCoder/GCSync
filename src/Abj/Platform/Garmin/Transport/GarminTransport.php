@@ -12,14 +12,14 @@ use Abj\Logger\ConsoleLogger;
 
 class GarminTransport
 {
-  /** @var null|resource */
-  private $objCurl = NULL;
+  /** @var resource */
+  private $curl = NULL;
 
   /** @var array */
-  private $arrCurlInfo = array();
+  private $curlInfo = array();
 
   /** @var array */
-  private $arrCurlOptions = [
+  private $curlOptions = [
     CURLOPT_RETURNTRANSFER => TRUE,
     CURLOPT_SSL_VERIFYHOST => FALSE,
     CURLOPT_SSL_VERIFYPEER => FALSE,
@@ -29,14 +29,8 @@ class GarminTransport
     CURLOPT_FRESH_CONNECT => TRUE
   ];
 
-  /**
-   * @var int
-   */
-  private $intLastResponseCode = -1;
 
-  /**
-   * @var string
-   */
+  /** @var string */
   private $cookieFilePath = '';
 
 
@@ -63,17 +57,20 @@ class GarminTransport
    */
   public function refreshSession()
   {
-    $this->objCurl = curl_init();
-    $this->arrCurlOptions[CURLOPT_COOKIEJAR] = $this->cookieFilePath;
-    $this->arrCurlOptions[CURLOPT_COOKIEFILE] = $this->cookieFilePath;
-    curl_setopt_array($this->objCurl, $this->arrCurlOptions);
+    $this->curl = curl_init();
+    if (file_exists($this->cookieFilePath))
+    {
+      $this->curlOptions[CURLOPT_COOKIEJAR] = $this->cookieFilePath;
+      $this->curlOptions[CURLOPT_COOKIEFILE] = $this->cookieFilePath;
+    }
+    curl_setopt_array($this->curl, $this->curlOptions);
   }
 
   /**
    * @param string $strUrl
    * @param array  $arrParams
    * @param bool   $bolAllowRedirects
-   * @return mixed
+   * @return integer
    */
   public function get($strUrl, $arrParams = array(), $bolAllowRedirects = TRUE)
   {
@@ -82,14 +79,15 @@ class GarminTransport
       $strUrl .= '?' . http_build_query($arrParams);
     }
 
-    curl_setopt($this->objCurl, CURLOPT_URL, $strUrl);
-    curl_setopt($this->objCurl, CURLOPT_FOLLOWLOCATION, (bool) $bolAllowRedirects);
-    curl_setopt($this->objCurl, CURLOPT_CUSTOMREQUEST, 'GET');
+    curl_setopt($this->curl, CURLOPT_URL, $strUrl);
+    curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, (bool) $bolAllowRedirects);
+    curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, 'GET');
+    $response = curl_exec($this->curl);
+    $info = curl_getinfo($this->curl);
 
-    $strResponse = curl_exec($this->objCurl);
-    $arrCurlInfo = curl_getinfo($this->objCurl);
-    $this->intLastResponseCode = $arrCurlInfo['http_code'];
-    return $strResponse;
+    $this->setCurlInfo($info, $response);
+
+    return intval($info['http_code']);
   }
 
   /**
@@ -97,45 +95,54 @@ class GarminTransport
    * @param array  $arrParams
    * @param array  $arrData
    * @param bool   $bolAllowRedirects
-   * @return mixed
+   * @return integer
    */
   public function post($strUrl, $arrParams = array(), $arrData = array(), $bolAllowRedirects = TRUE)
   {
 
-    curl_setopt($this->objCurl, CURLOPT_HEADER, TRUE);
-    curl_setopt($this->objCurl, CURLOPT_FRESH_CONNECT, TRUE);
-    curl_setopt($this->objCurl, CURLOPT_FOLLOWLOCATION, (bool) $bolAllowRedirects);
-    curl_setopt($this->objCurl, CURLOPT_CUSTOMREQUEST, "POST");
-    curl_setopt($this->objCurl, CURLOPT_VERBOSE, FALSE);
+    curl_setopt($this->curl, CURLOPT_HEADER, TRUE);
+    //curl_setopt($this->curl, CURLOPT_FRESH_CONNECT, TRUE);
+    curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, (bool) $bolAllowRedirects);
+    curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, "POST");
     if (count($arrData))
     {
-      curl_setopt($this->objCurl, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
-      curl_setopt($this->objCurl, CURLOPT_POSTFIELDS, http_build_query($arrData));
+      curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
+      curl_setopt($this->curl, CURLOPT_POSTFIELDS, http_build_query($arrData));
     }
     $strUrl .= '?' . http_build_query($arrParams);
+    curl_setopt($this->curl, CURLOPT_URL, $strUrl);
+    $response = curl_exec($this->curl);
+    $info = curl_getinfo($this->curl);
 
-    curl_setopt($this->objCurl, CURLOPT_URL, $strUrl);
+    $this->setCurlInfo($info, $response);
 
-    $strResponse = curl_exec($this->objCurl);
-    $this->arrCurlInfo = curl_getinfo($this->objCurl);
-    $this->intLastResponseCode = (int) $this->arrCurlInfo['http_code'];
-    return $strResponse;
+    return intval($info['http_code']);
   }
 
   /**
-   * @return array
+   * @param string $key
+   * @param mixed  $default
+   * @return mixed
    */
-  public function getCurlInfo()
+  public function getCurlInfo($key = NULL, $default = NULL)
   {
-    return $this->arrCurlInfo;
+    $answer = $this->curlInfo;
+    if ($key)
+    {
+      $answer = array_key_exists($key, $this->curlInfo) ? $this->curlInfo[$key] : $default;
+    }
+
+    return $answer;
   }
 
   /**
-   * @return int
+   * @param array  $info
+   * @param string $response
    */
-  public function getLastResponseCode()
+  protected function setCurlInfo($info, $response = "")
   {
-    return $this->intLastResponseCode;
+    $this->curlInfo = $info;
+    $this->curlInfo["response"] = $response;
   }
 
   /**
@@ -154,7 +161,7 @@ class GarminTransport
    */
   public function cleanupSession()
   {
-    curl_close($this->objCurl);
+    curl_close($this->curl);
     $this->clearCookie();
   }
 }
