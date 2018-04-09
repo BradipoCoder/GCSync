@@ -12,6 +12,9 @@ use Abj\Logger\ConsoleLogger;
 
 class GarminTransport
 {
+  const AUTH_URL = 'https://sso.garmin.com/sso';
+  const BASE_URL = 'https://connect.garmin.com/proxy';
+
   /** @var resource */
   private $curl = NULL;
 
@@ -23,10 +26,10 @@ class GarminTransport
     CURLOPT_RETURNTRANSFER => TRUE,
     CURLOPT_SSL_VERIFYHOST => FALSE,
     CURLOPT_SSL_VERIFYPEER => FALSE,
-    CURLOPT_COOKIESESSION => FALSE,
+    CURLOPT_COOKIESESSION => TRUE,
     CURLOPT_AUTOREFERER => TRUE,
     CURLOPT_VERBOSE => FALSE,
-    CURLOPT_FRESH_CONNECT => TRUE
+    /*CURLOPT_FRESH_CONNECT => TRUE*/
   ];
 
 
@@ -58,29 +61,58 @@ class GarminTransport
   public function refreshSession()
   {
     $this->curl = curl_init();
-    if (file_exists($this->cookieFilePath))
-    {
+    //if (file_exists($this->cookieFilePath))
+    //{
       $this->curlOptions[CURLOPT_COOKIEJAR] = $this->cookieFilePath;
       $this->curlOptions[CURLOPT_COOKIEFILE] = $this->cookieFilePath;
-    }
+    //}
     curl_setopt_array($this->curl, $this->curlOptions);
   }
 
+
   /**
-   * @param string $strUrl
-   * @param array  $arrParams
-   * @param bool   $bolAllowRedirects
-   * @return integer
+   * @param string $uri
+   * @param string $service
+   * @param string $mountPoint
+   * @param array  $params
+   * @param string $mimeType
+   * @return string
    */
-  public function get($strUrl, $arrParams = array(), $bolAllowRedirects = TRUE)
+  protected function buildUri($uri, $service, $mountPoint, $params = [], $mimeType = 'json')
   {
-    if (count($arrParams))
+    $answer = $uri;
+
+    $answer .= $service ? '/' . $service : '';
+
+    $answer .= $mimeType ? '/' . $mimeType : '';
+
+    $answer .= '/' . $mountPoint;
+
+    if (count($params))
     {
-      $strUrl .= '?' . http_build_query($arrParams);
+      $answer .= '?' . http_build_query($params);
     }
 
-    curl_setopt($this->curl, CURLOPT_URL, $strUrl);
-    curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, (bool) $bolAllowRedirects);
+    return $answer;
+  }
+
+  /**
+   * @param string $service
+   * @param string $mountPoint
+   * @param array  $params
+   * @param bool   $allowRedirects
+   * @param string $mimeType
+   *
+   * @return integer
+   */
+  public function get($service, $mountPoint, $params = [], $allowRedirects = TRUE, $mimeType = 'json')
+  {
+    $uri = $this->buildUri(self::BASE_URL, $service, $mountPoint, $params, $mimeType);
+
+    echo "using uri: " . $uri;
+
+    curl_setopt($this->curl, CURLOPT_URL, $uri);
+    curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, (bool) $allowRedirects);
     curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, 'GET');
     $response = curl_exec($this->curl);
     $info = curl_getinfo($this->curl);
@@ -91,32 +123,84 @@ class GarminTransport
   }
 
   /**
-   * @param string $strUrl
-   * @param array  $arrParams
-   * @param array  $arrData
-   * @param bool   $bolAllowRedirects
-   * @return integer
+   * @param string $service
+   * @param string $mountPoint
+   * @param array  $params
+   * @param array  $data
+   * @param bool   $allowRedirects
+   * @param string $mimeType
+   *
+   * @return int
    */
-  public function post($strUrl, $arrParams = array(), $arrData = array(), $bolAllowRedirects = TRUE)
+  public function post($service, $mountPoint, $params = [], $data = [], $allowRedirects = TRUE, $mimeType = 'json')
   {
+    $uri = $this->buildUri(self::BASE_URL, $service, $mountPoint, $params, $mimeType);
 
+    curl_setopt($this->curl, CURLOPT_URL, $uri);
     curl_setopt($this->curl, CURLOPT_HEADER, TRUE);
     //curl_setopt($this->curl, CURLOPT_FRESH_CONNECT, TRUE);
-    curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, (bool) $bolAllowRedirects);
+    curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, (bool) $allowRedirects);
     curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, "POST");
-    if (count($arrData))
+    if (count($data))
     {
       curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
-      curl_setopt($this->curl, CURLOPT_POSTFIELDS, http_build_query($arrData));
+      curl_setopt($this->curl, CURLOPT_POSTFIELDS, http_build_query($data));
     }
-    $strUrl .= '?' . http_build_query($arrParams);
-    curl_setopt($this->curl, CURLOPT_URL, $strUrl);
     $response = curl_exec($this->curl);
     $info = curl_getinfo($this->curl);
 
     $this->setCurlInfo($info, $response);
 
     return intval($info['http_code']);
+  }
+
+  /**
+   * @param string $username
+   * @param string $password
+   *
+   * @throws \Exception
+   */
+  public function authenticate($username, $password)
+  {
+    $urlParams = [
+      'service' => 'https://connect.garmin.com/modern/',
+      'redirectAfterAccountLoginUrl' => 'https://connect.garmin.com/modern/',
+      'gauthHost' => self::AUTH_URL,
+      'clientId' => 'GarminConnect',
+      'consumeServiceTicket' => 'false'
+    ];
+
+    $postData = [
+      "username" => $username,
+      "password" => $password,
+      "_eventId" => "submit",
+      "displayNameRequired" => "false"
+    ];
+
+    $uri = $this->buildUri(self::AUTH_URL, NULL, "login", $urlParams, NULL);
+
+    curl_setopt($this->curl, CURLOPT_URL, $uri);
+    curl_setopt($this->curl, CURLOPT_HEADER, TRUE);
+    //curl_setopt($this->curl, CURLOPT_FRESH_CONNECT, TRUE);
+    curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, FALSE);
+    curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, "POST");
+    curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
+    curl_setopt($this->curl, CURLOPT_POSTFIELDS, http_build_query($postData));
+    $response = curl_exec($this->curl);
+    $info = curl_getinfo($this->curl);
+
+    $this->setCurlInfo($info, $response);
+    $resCode = intval($info['http_code']);
+
+    if ($resCode != 302)
+    {
+      throw new \Exception("SSO network error - expected 302");
+    }
+
+    if (!preg_match('#Set-Cookie: GARMIN-SSO=1; Domain=garmin.com; Path=/#i', $response))
+    {
+      throw new \Exception("SSO sign in failed.");
+    }
   }
 
   /**

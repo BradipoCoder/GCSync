@@ -65,7 +65,6 @@ class GarminConnect extends Platform implements PlatformInterface
   }
 
 
-
   /**
    * Because there doesn't appear to be a nice "API" way to authenticate with Garmin Connect, we have to effectively spoof
    * a browser session using some pretty high-level scraping techniques. The connector object does all of the HTTP
@@ -78,71 +77,14 @@ class GarminConnect extends Platform implements PlatformInterface
   private function authenticate($username, $password)
   {
 
-    /*
-     * service=https://connect.garmin.com/modern/
-     * webhost=https://connect.garmin.com
-     * source=https://connect.garmin.com/it-IT/signin
-     * redirectAfterAccountLoginUrl=https://connect.garmin.com/modern/
-     * redirectAfterAccountCreationUrl=https://connect.garmin.com/modern/
-     * gauthHost=https://sso.garmin.com/sso
-     * locale=it_IT
-     * id=gauth-widget
-     * cssUrl=https://static.garmincdn.com/com.garmin.connect/ui/css/gauth-custom-v1.2-min.css
-     * privacyStatementUrl=//connect.garmin.com/it-IT/privacy/
-     * clientId=GarminConnect
-     * rememberMeShown=true
-     * rememberMeChecked=false
-     * createAccountShown=true
-     * openCreateAccount=false
-     * displayNameShown=false
-     * consumeServiceTicket=false
-     * initialFocus=true
-     * embedWidget=false
-     * generateExtraServiceTicket=false
-     * generateNoServiceTicket=false
-     * globalOptInShown=true
-     * globalOptInChecked=false
-     * mobile=false
-     * connectLegalTerms=true
-     * locationPromptShown=true
-     */
+    $this->transport->authenticate($username, $password);
 
-    $authUri = "https://sso.garmin.com/sso";
-
-    $serviceUri = "https://connect.garmin.com/modern/";
-
-    $urlParams = [
-      'service' => $serviceUri,
-      'redirectAfterAccountLoginUrl' => $authUri. "/login",
-      'gauthHost' => $authUri,
-      'clientId' => 'GarminConnect',
-      'consumeServiceTicket' => 'false'
-    ];
-
-    $postData = [
-      "username" => $username,
-      "password" => $password,
-      "_eventId" => "submit",
-      "displayNameRequired" => "false"
-    ];
-
-    $resCode = $this->transport->post($authUri . "/login", $urlParams, $postData, FALSE);
-
-    if ($resCode != 302)
-    {
-      throw new \Exception("SSO network error - expected 302");
-    }
-
-    $info = $this->transport->getCurlInfo();
-    ConsoleLogger::log($info);
-
-
-    if (!preg_match('#Set-Cookie: GARMIN-SSO=1; Domain=garmin.com; Path=/#i', $this->transport->getCurlInfo("response")))
-    {
-      throw new \Exception("SSO sign in failed.");
-    }
+    //$info = $this->transport->getCurlInfo();
+    //ConsoleLogger::log($info);
 
     ConsoleLogger::log("logged in with username: " . $username);
+
+    $this->getUserId();
   }
 
   //  //Request URL: https://connect.garmin.com/sso-signout/?_=1523023088138
@@ -175,15 +117,26 @@ class GarminConnect extends Platform implements PlatformInterface
    * @return mixed
    * @throws \Exception
    */
-  public function getUsername()
+  public function getUserId()
   {
-    $strResponse = $this->transport->get('https://connect.garmin.com/user/username');
+    $resCode = $this->transport->get('user-service-1.0', 'user');
 
-    if ($this->transport->getLastResponseCode() != 200)
+    $response = $this->transport->getCurlInfo();
+    ConsoleLogger::log($response);
+
+
+    if ($resCode != 200)
     {
-      throw new \Exception($this->transport->getLastResponseCode());
+      throw new \Exception("Get UserId failed: " . $resCode);
     }
-    $objResponse = json_decode($strResponse);
-    return $objResponse->username;
+
+
+
+    $response = $this->transport->getCurlInfo();
+    ConsoleLogger::log($response);
+
+    //$response = json_decode($this->transport->getCurlInfo("response"));
+
+    return "";//$response->username;
   }
 }
